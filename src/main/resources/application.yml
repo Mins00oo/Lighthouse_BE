@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: Lighthouse_BE
+
+  # Oracle DataSource (Primary - 앱 메타데이터)
+  datasource:
+    url: jdbc:oracle:thin:@${ORACLE_HOST:localhost}:${ORACLE_PORT:1521}/${ORACLE_SID:FREEPDB1}
+    username: ${ORACLE_USERNAME:lighthouse}
+    password: ${ORACLE_PASSWORD:lighthousepass}
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      pool-name: oracle-pool
+      minimum-idle: 2
+
+# ClickHouse DataSource (로그 데이터)
+clickhouse:
+  datasource:
+    url: jdbc:ch://${CLICKHOUSE_HOST:localhost}:${CLICKHOUSE_PORT:8123}/lighthouse
+    username: ${CLICKHOUSE_USERNAME:lighthouse}
+    password: ${CLICKHOUSE_PASSWORD:chpass}
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+    hikari:
+      pool-name: clickhouse-pool
+      minimum-idle: 2
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:lighthouse-default-secret-key-must-be-at-least-256-bits-long-for-hs256}
+    access-token-expiration: ${JWT_ACCESS_EXPIRATION:3600000}
+    refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+websocket:
+  endpoint: /ws
+  allowed-origins: ${WS_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    com.app.lighthouse: DEBUG
+    com.clickhouse: WARN
