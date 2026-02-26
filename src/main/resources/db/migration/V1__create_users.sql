@@ -1,5 +1,5 @@
 -- ============================================================
--- Lighthouse: 사용자 테이블 (Oracle)
+-- [V1] lh_user: 사용자 테이블
 -- ============================================================
 
 CREATE TABLE lh_user (
@@ -11,4 +11,3 @@ CREATE TABLE lh_user (
     updated_at TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_lh_user_username ON lh_user(username);

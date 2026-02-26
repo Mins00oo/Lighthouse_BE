@@ -72,7 +72,21 @@ public class LogRepository {
 
     public long getErrorLogCount(LocalDateTime from, LocalDateTime to) {
         String sql = "SELECT count() FROM " + TABLE +
-                " WHERE ingest_time >= ? AND ingest_time < ? AND level IN ('ERROR', 'FATAL')";
+                " WHERE ingest_time >= ? AND ingest_time < ? AND level = 'ERROR'";
+        Long count = jdbc.queryForObject(sql, Long.class, from, to);
+        return count != null ? count : 0L;
+    }
+
+    public long getFatalLogCount(LocalDateTime from, LocalDateTime to) {
+        String sql = "SELECT count() FROM " + TABLE +
+                " WHERE ingest_time >= ? AND ingest_time < ? AND level = 'FATAL'";
+        Long count = jdbc.queryForObject(sql, Long.class, from, to);
+        return count != null ? count : 0L;
+    }
+
+    public long getWarnLogCount(LocalDateTime from, LocalDateTime to) {
+        String sql = "SELECT count() FROM " + TABLE +
+                " WHERE ingest_time >= ? AND ingest_time < ? AND level = 'WARN'";
         Long count = jdbc.queryForObject(sql, Long.class, from, to);
         return count != null ? count : 0L;
     }

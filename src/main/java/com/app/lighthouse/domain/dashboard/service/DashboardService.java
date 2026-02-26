@@ -13,6 +13,7 @@ import com.app.lighthouse.domain.dashboard.dto.ApiRankingDto;
 import com.app.lighthouse.domain.dashboard.dto.DashboardSummaryDto;
 import com.app.lighthouse.domain.dashboard.dto.ErrorTrendDto;
 import com.app.lighthouse.domain.dashboard.dto.LogLevelDistributionDto;
+import com.app.lighthouse.domain.dashboard.dto.LogVolumeDto;
 import com.app.lighthouse.domain.dashboard.dto.RecentErrorDto;
 import com.app.lighthouse.domain.dashboard.dto.ServerStatusDto;
 import com.app.lighthouse.domain.log.repository.LogRepository;
@@ -44,7 +45,9 @@ public class DashboardService {
 
         long totalCount = logRepository.getTotalLogCount(from, to);
         long errorCount = logRepository.getErrorLogCount(from, to);
-        double errorRate = totalCount > 0 ? (double) errorCount / totalCount * 100 : 0.0;
+        long fatalCount = logRepository.getFatalLogCount(from, to);
+        long warnCount = logRepository.getWarnLogCount(from, to);
+        double errorRate = totalCount > 0 ? (double) (errorCount + fatalCount) / totalCount * 100 : 0.0;
 
         LocalDateTime activeThreshold = LocalDateTime.now().minusMinutes(SERVER_ACTIVE_THRESHOLD_MINUTES);
         int activeServerCount = logRepository.getActiveServerCount(activeThreshold);
@@ -56,6 +59,8 @@ public class DashboardService {
         return DashboardSummaryDto.builder()
                 .totalLogCount(totalCount)
                 .errorCount(errorCount)
+                .fatalCount(fatalCount)
+                .warnCount(warnCount)
                 .errorRate(roundTwo(errorRate))
                 .activeServerCount(activeServerCount)
                 .totalServiceCount(serviceCount)
@@ -63,6 +68,36 @@ public class DashboardService {
                 .avgResponseTimeMs(avgResponseTime)
                 .p95ResponseTimeMs(p95ResponseTime)
                 .periodDescription(from + " ~ " + to)
+                .build();
+    }
+
+    // ========== 로그 볼륨 트렌드 ==========
+
+    public LogVolumeDto getLogVolume(LocalDateTime from, LocalDateTime to,
+                                     String interval, String service, String env) {
+        LocalDateTime[] range = resolveAndValidate(from, to);
+        from = range[0]; to = range[1];
+
+        if (interval == null || interval.isBlank()) {
+            interval = resolveInterval(from, to);
+        }
+        validateInterval(interval);
+
+        var rows = logRepository.getLogTimeline(from, to, interval, service, env);
+
+        List<LogVolumeDto.TimeSlot> points = rows.stream()
+                .map(r -> LogVolumeDto.TimeSlot.builder()
+                        .time(r.time())
+                        .totalCount(r.total())
+                        .errorCount(r.error())
+                        .warnCount(r.warn())
+                        .infoCount(r.info())
+                        .build())
+                .collect(Collectors.toList());
+
+        return LogVolumeDto.builder()
+                .interval(interval)
+                .points(points)
                 .build();
     }
 

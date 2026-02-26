@@ -59,6 +59,19 @@ public class JwtTokenProvider {
         return false;
     }
 
+    /**
+     * API 요청 인증에는 ACCESS 토큰만 허용.
+     * Refresh 토큰이 Authorization 헤더에 실려 오는 경우를 차단.
+     */
+    public boolean isAccessToken(String token) {
+        try {
+            String type = (String) parseClaims(token).get("type");
+            return "ACCESS".equals(type);
+        } catch (JwtException e) {
+            return false;
+        }
+    }
+
     private String buildToken(String subject, long expirationMs, String type) {
         Date now = new Date();
         return Jwts.builder()

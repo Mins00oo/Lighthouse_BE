@@ -55,11 +55,12 @@ CREATE TABLE IF NOT EXISTS lighthouse.app_logs_kafka
 )
 ENGINE = Kafka
 SETTINGS
-    kafka_broker_list = 'kafka:9092',
-    kafka_topic_list  = 'logs.app',
-    kafka_group_name  = 'ch_app_logs_consumer',
-    kafka_format      = 'JSONEachRow',
-    kafka_num_consumers = 1;
+    kafka_broker_list          = 'kafka:9092',
+    kafka_topic_list           = 'logs.app',
+    kafka_group_name           = 'ch_app_logs_consumer',
+    kafka_format               = 'JSONEachRow',
+    kafka_num_consumers        = 1,
+    kafka_skip_broken_messages = 1000;
 
 -- ============================================================
 -- Materialized View: Kafka -> app_logs 자동 적재

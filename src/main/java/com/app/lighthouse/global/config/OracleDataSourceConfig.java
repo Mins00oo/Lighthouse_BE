@@ -7,13 +7,15 @@ import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 @MapperScan(
@@ -24,13 +26,14 @@ public class OracleDataSourceConfig {
 
     @Primary
     @Bean(name = "oracleDataSource")
-    @ConfigurationProperties(prefix = "spring.datasource")
+    @ConfigurationProperties(prefix = "spring.datasource.hikari")
     public DataSource oracleDataSource() {
-        return DataSourceBuilder.create().build();
+        return new HikariDataSource();
     }
 
     @Primary
     @Bean(name = "oracleSqlSessionFactory")
+    @DependsOn("flyway")
     public SqlSessionFactory oracleSqlSessionFactory() throws Exception {
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(oracleDataSource());

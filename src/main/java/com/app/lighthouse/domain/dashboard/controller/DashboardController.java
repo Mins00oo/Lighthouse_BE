@@ -14,6 +14,7 @@ import com.app.lighthouse.domain.dashboard.dto.ApiRankingDto;
 import com.app.lighthouse.domain.dashboard.dto.DashboardSummaryDto;
 import com.app.lighthouse.domain.dashboard.dto.ErrorTrendDto;
 import com.app.lighthouse.domain.dashboard.dto.LogLevelDistributionDto;
+import com.app.lighthouse.domain.dashboard.dto.LogVolumeDto;
 import com.app.lighthouse.domain.dashboard.dto.RecentErrorDto;
 import com.app.lighthouse.domain.dashboard.dto.ServerStatusDto;
 import com.app.lighthouse.domain.dashboard.service.DashboardService;
@@ -33,6 +34,16 @@ public class DashboardController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
         return ApiResponse.ok(dashboardService.getSummary(from, to));
+    }
+
+    @GetMapping("/log-volume")
+    public ApiResponse<LogVolumeDto> getLogVolume(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            @RequestParam(required = false) String interval,
+            @RequestParam(required = false) String service,
+            @RequestParam(required = false) String env) {
+        return ApiResponse.ok(dashboardService.getLogVolume(from, to, interval, service, env));
     }
 
     @GetMapping("/log-level-distribution")

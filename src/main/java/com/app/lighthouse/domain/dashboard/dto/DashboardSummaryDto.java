@@ -9,6 +9,8 @@ public class DashboardSummaryDto {
 
     private final long totalLogCount;
     private final long errorCount;
+    private final long fatalCount;
+    private final long warnCount;
     private final double errorRate;
     private final int activeServerCount;
     private final int totalServiceCount;
