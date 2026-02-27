@@ -25,7 +25,7 @@ clickhouse:
 
 app:
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://100.100.100.156:3030,http://localhost:3030}
   init-admin:
     enabled: ${INIT_ADMIN_ENABLED:true}
     username: ${INIT_ADMIN_USERNAME:admin}
@@ -37,7 +37,7 @@ app:
 
 websocket:
   endpoint: /ws
-  allowed-origins: ${WS_ORIGINS:http://localhost:3000,http://localhost:5173}
+  allowed-origins: ${WS_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:3030}
 
 springdoc:
   swagger-ui:
