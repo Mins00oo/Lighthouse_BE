@@ -3,7 +3,16 @@
     "allow": [
       "Bash(./gradlew compileJava:*)",
       "Bash(docker exec:*)",
-      "Bash(MSYS_NO_PATHCONV=1 docker exec:*)"
+      "Bash(MSYS_NO_PATHCONV=1 docker exec:*)",
+      "mcp__notion__API-post-search",
+      "mcp__notion__API-update-a-data-source",
+      "mcp__notion__API-retrieve-a-database",
+      "mcp__notion__API-retrieve-a-data-source",
+      "Bash(curl:*)",
+      "mcp__notion__API-post-page",
+      "mcp__notion__API-patch-page",
+      "mcp__notion__API-patch-block-children",
+      "mcp__notion__API-query-data-source"
     ]
   }
 }

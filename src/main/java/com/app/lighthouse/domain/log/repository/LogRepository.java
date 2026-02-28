@@ -5,7 +5,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,10 +17,12 @@ import com.app.lighthouse.domain.log.dto.LogEntryDto;
 import com.app.lighthouse.domain.log.dto.LogSearchRequest;
 import com.app.lighthouse.domain.log.repository.row.ApiDetailRow;
 import com.app.lighthouse.domain.log.repository.row.ApiRankingRow;
+import com.app.lighthouse.domain.log.repository.row.AppStatsRow;
 import com.app.lighthouse.domain.log.repository.row.ErrorGroupRow;
 import com.app.lighthouse.domain.log.repository.row.ErrorTrendRow;
 import com.app.lighthouse.domain.log.repository.row.LevelCountRow;
 import com.app.lighthouse.domain.log.repository.row.ServerStatusRow;
+import com.app.lighthouse.domain.log.repository.row.ServiceSummaryRow;
 import com.app.lighthouse.domain.log.repository.row.TimelineRow;
 
 @Repository
@@ -335,6 +339,90 @@ public class LogRepository {
         params.add(limit);
 
         return jdbc.query(sql.toString(), (rs, rowNum) -> mapToLogEntry(rs), params.toArray());
+    }
+
+    // ========== 애플리케이션: 자동 발견 ==========
+
+    public List<String> getDistinctServices(LocalDateTime since) {
+        String sql = "SELECT DISTINCT service FROM " + TABLE +
+                " WHERE ingest_time >= ? AND service != '' ORDER BY service";
+        return jdbc.queryForList(sql, String.class, since);
+    }
+
+    // ========== 애플리케이션: 서비스별 요약 통계 ==========
+
+    public List<ServiceSummaryRow> getServiceSummaries(LocalDateTime since, List<String> serviceNames) {
+        if (serviceNames == null || serviceNames.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String placeholders = serviceNames.stream().map(s -> "?").collect(Collectors.joining(", "));
+        String sql = "SELECT service, count() AS log_count," +
+                " countIf(level IN ('ERROR', 'FATAL')) AS error_count," +
+                " max(ingest_time) AS last_log_time" +
+                " FROM " + TABLE +
+                " WHERE ingest_time >= ? AND service IN (" + placeholders + ")" +
+                " GROUP BY service";
+
+        List<Object> params = new ArrayList<>();
+        params.add(since);
+        params.addAll(serviceNames);
+
+        return jdbc.query(sql,
+                (rs, rowNum) -> new ServiceSummaryRow(
+                        rs.getString("service"),
+                        rs.getLong("log_count"),
+                        rs.getLong("error_count"),
+                        toSafeLocalDateTime(rs.getTimestamp("last_log_time"))
+                ),
+                params.toArray());
+    }
+
+    // ========== 애플리케이션: 서비스별 인스턴스 현황 ==========
+
+    public List<ServerStatusRow> getServerStatusByService(String serviceName, LocalDateTime since) {
+        String sql = "SELECT host, service, env," +
+                " max(ingest_time) AS last_log_time," +
+                " count() AS recent_log_count," +
+                " countIf(level IN ('ERROR', 'FATAL')) AS recent_error_count" +
+                " FROM " + TABLE +
+                " WHERE ingest_time >= ? AND service = ?" +
+                " GROUP BY host, service, env ORDER BY last_log_time DESC";
+
+        return jdbc.query(sql,
+                (rs, rowNum) -> new ServerStatusRow(
+                        rs.getString("host"),
+                        rs.getString("service"),
+                        rs.getString("env"),
+                        toSafeLocalDateTime(rs.getTimestamp("last_log_time")),
+                        rs.getLong("recent_log_count"),
+                        rs.getLong("recent_error_count")
+                ),
+                since, serviceName);
+    }
+
+    // ========== 애플리케이션: 상세 통계 ==========
+
+    public AppStatsRow getAppStats(LocalDateTime from, LocalDateTime to, String serviceName) {
+        String sql = "SELECT count() AS total_count," +
+                " countIf(level = 'ERROR') AS error_count," +
+                " countIf(level = 'WARN') AS warn_count," +
+                " countIf(http_method != '') AS request_count," +
+                " avg(if(response_time_ms > 0, response_time_ms, null)) AS avg_response_ms," +
+                " quantile(0.95)(if(response_time_ms > 0, response_time_ms, null)) AS p95_response_ms" +
+                " FROM " + TABLE +
+                " WHERE ingest_time >= ? AND ingest_time < ? AND service = ?";
+
+        return jdbc.queryForObject(sql,
+                (rs, rowNum) -> new AppStatsRow(
+                        rs.getLong("total_count"),
+                        rs.getLong("error_count"),
+                        rs.getLong("warn_count"),
+                        rs.getLong("request_count"),
+                        roundTwo(rs.getDouble("avg_response_ms")),
+                        roundTwo(rs.getDouble("p95_response_ms"))
+                ),
+                from, to, serviceName);
     }
 
     // ========== Private Helpers ==========
