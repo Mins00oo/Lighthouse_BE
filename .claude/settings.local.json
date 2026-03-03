@@ -12,7 +12,8 @@
       "mcp__notion__API-post-page",
       "mcp__notion__API-patch-page",
       "mcp__notion__API-patch-block-children",
-      "mcp__notion__API-query-data-source"
+      "mcp__notion__API-query-data-source",
+      "Bash(./gradlew build:*)"
     ]
   }
 }
