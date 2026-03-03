@@ -14,6 +14,8 @@ import com.app.lighthouse.domain.log.dto.LogSearchResponse;
 import com.app.lighthouse.domain.log.dto.LogTimelineDto;
 import com.app.lighthouse.domain.log.repository.LogRepository;
 
+import com.app.lighthouse.global.util.TimeUtils;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -48,12 +50,17 @@ public class LogService {
     public LogTimelineDto getTimeline(LocalDateTime from, LocalDateTime to,
                                        String interval, String service, String env) {
         if (from == null && to == null) {
-            to = LocalDateTime.now();
+            to = TimeUtils.nowUtc();
             from = to.minusHours(1);
         } else if (from != null && to == null) {
-            to = LocalDateTime.now();
+            from = TimeUtils.toUtc(from);
+            to = TimeUtils.nowUtc();
         } else if (from == null) {
+            to = TimeUtils.toUtc(to);
             from = to.minusHours(1);
+        } else {
+            from = TimeUtils.toUtc(from);
+            to = TimeUtils.toUtc(to);
         }
         validateTimeRange(from, to);
 
@@ -81,12 +88,17 @@ public class LogService {
 
     private void resolveTimeRange(LogSearchRequest request) {
         if (request.getFrom() == null && request.getTo() == null) {
-            request.setTo(LocalDateTime.now());
+            request.setTo(TimeUtils.nowUtc());
             request.setFrom(request.getTo().minusHours(1));
         } else if (request.getFrom() != null && request.getTo() == null) {
-            request.setTo(LocalDateTime.now());
+            request.setFrom(TimeUtils.toUtc(request.getFrom()));
+            request.setTo(TimeUtils.nowUtc());
         } else if (request.getFrom() == null) {
+            request.setTo(TimeUtils.toUtc(request.getTo()));
             request.setFrom(request.getTo().minusHours(1));
+        } else {
+            request.setFrom(TimeUtils.toUtc(request.getFrom()));
+            request.setTo(TimeUtils.toUtc(request.getTo()));
         }
     }
 

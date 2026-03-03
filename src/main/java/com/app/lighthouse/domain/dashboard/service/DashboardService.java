@@ -19,6 +19,7 @@ import com.app.lighthouse.domain.dashboard.dto.ServerStatusDto;
 import com.app.lighthouse.domain.log.repository.LogRepository;
 import com.app.lighthouse.domain.log.repository.row.LevelCountRow;
 import com.app.lighthouse.domain.log.repository.row.ServerStatusRow;
+import com.app.lighthouse.global.util.TimeUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,7 +50,7 @@ public class DashboardService {
         long warnCount = logRepository.getWarnLogCount(from, to);
         double errorRate = totalCount > 0 ? (double) (errorCount + fatalCount) / totalCount * 100 : 0.0;
 
-        LocalDateTime activeThreshold = LocalDateTime.now().minusMinutes(SERVER_ACTIVE_THRESHOLD_MINUTES);
+        LocalDateTime activeThreshold = TimeUtils.nowUtc().minusMinutes(SERVER_ACTIVE_THRESHOLD_MINUTES);
         int activeServerCount = logRepository.getActiveServerCount(activeThreshold);
         int serviceCount = logRepository.getServiceCount(from);
         long requestCount = logRepository.getRequestCount(from, to);
@@ -67,7 +68,7 @@ public class DashboardService {
                 .totalRequestCount(requestCount)
                 .avgResponseTimeMs(avgResponseTime)
                 .p95ResponseTimeMs(p95ResponseTime)
-                .periodDescription(from + " ~ " + to)
+                .periodDescription(TimeUtils.toKst(from) + " ~ " + TimeUtils.toKst(to))
                 .build();
     }
 
@@ -123,7 +124,7 @@ public class DashboardService {
                 .collect(Collectors.toList());
 
         return LogLevelDistributionDto.builder()
-                .timeRange(from + " ~ " + to)
+                .timeRange(TimeUtils.toKst(from) + " ~ " + TimeUtils.toKst(to))
                 .distribution(distribution)
                 .build();
     }
@@ -136,13 +137,13 @@ public class DashboardService {
                     "recentMinutes는 1 이상 " + MAX_RECENT_MINUTES + " 이하여야 합니다.");
         }
 
-        LocalDateTime since = LocalDateTime.now().minusMinutes(recentMinutes);
+        LocalDateTime since = TimeUtils.nowUtc().minusMinutes(recentMinutes);
         List<ServerStatusRow> rows = logRepository.getServerStatusSummary(since);
 
         return rows.stream()
                 .map(r -> {
                     boolean isActive = r.lastLogTime() != null && r.lastLogTime().isAfter(
-                            LocalDateTime.now().minusMinutes(SERVER_ACTIVE_THRESHOLD_MINUTES));
+                            TimeUtils.nowKst().minusMinutes(SERVER_ACTIVE_THRESHOLD_MINUTES));
 
                     return ServerStatusDto.builder()
                             .host(r.host())
@@ -214,7 +215,7 @@ public class DashboardService {
 
         return ApiRankingDto.builder()
                 .rankings(rankings)
-                .periodDescription(from + " ~ " + to)
+                .periodDescription(TimeUtils.toKst(from) + " ~ " + TimeUtils.toKst(to))
                 .build();
     }
 
@@ -299,12 +300,17 @@ public class DashboardService {
 
     private LocalDateTime[] resolveAndValidate(LocalDateTime from, LocalDateTime to) {
         if (from == null && to == null) {
-            to = LocalDateTime.now();
+            to = TimeUtils.nowUtc();
             from = to.minusHours(1);
         } else if (from != null && to == null) {
-            to = LocalDateTime.now();
+            from = TimeUtils.toUtc(from);
+            to = TimeUtils.nowUtc();
         } else if (from == null) {
+            to = TimeUtils.toUtc(to);
             from = to.minusHours(1);
+        } else {
+            from = TimeUtils.toUtc(from);
+            to = TimeUtils.toUtc(to);
         }
         if (from.isAfter(to)) {
             throw new IllegalArgumentException("시작 시간(from)이 종료 시간(to)보다 클 수 없습니다.");

@@ -21,6 +21,8 @@ import com.app.lighthouse.domain.log.repository.row.ServiceSummaryRow;
 import com.app.lighthouse.infra.oracle.ApplicationMapper;
 import com.app.lighthouse.infra.oracle.ApplicationRecord;
 
+import com.app.lighthouse.global.util.TimeUtils;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,7 +43,7 @@ public class ApplicationService {
      * 신규 service → lh_application 자동 등록 (display_name = service_name)
      */
     public SyncResult syncAll() {
-        LocalDateTime since = LocalDateTime.now().minusHours(24);
+        LocalDateTime since = TimeUtils.nowUtc().minusHours(24);
         List<String> liveServices = logRepository.getDistinctServices(since);
 
         int newApps = 0;
@@ -86,7 +88,7 @@ public class ApplicationService {
                 .map(ApplicationRecord::serviceName)
                 .collect(Collectors.toList());
 
-        LocalDateTime since = LocalDateTime.now().minusHours(24);
+        LocalDateTime since = TimeUtils.nowUtc().minusHours(24);
         List<ServiceSummaryRow> summaries = logRepository.getServiceSummaries(since, serviceNames);
 
         Map<String, ServiceSummaryRow> summaryMap = summaries.stream()
@@ -109,7 +111,7 @@ public class ApplicationService {
         ApplicationRecord record = findApplicationOrThrow(appId);
 
         // 최근 1시간 통계
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = TimeUtils.nowUtc();
         LocalDateTime from = now.minusHours(1);
         AppStatsRow statsRow = logRepository.getAppStats(from, now, record.serviceName());
         AppStatsResponse stats = statsRow != null ? AppStatsResponse.from(statsRow) : null;
@@ -153,12 +155,17 @@ public class ApplicationService {
         ApplicationRecord record = findApplicationOrThrow(appId);
 
         if (from == null && to == null) {
-            to = LocalDateTime.now();
+            to = TimeUtils.nowUtc();
             from = to.minusHours(1);
         } else if (from != null && to == null) {
-            to = LocalDateTime.now();
+            from = TimeUtils.toUtc(from);
+            to = TimeUtils.nowUtc();
         } else if (from == null) {
+            to = TimeUtils.toUtc(to);
             from = to.minusHours(1);
+        } else {
+            from = TimeUtils.toUtc(from);
+            to = TimeUtils.toUtc(to);
         }
 
         AppStatsRow row = logRepository.getAppStats(from, to, record.serviceName());

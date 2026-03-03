@@ -24,6 +24,7 @@ import com.app.lighthouse.domain.log.repository.row.LevelCountRow;
 import com.app.lighthouse.domain.log.repository.row.ServerStatusRow;
 import com.app.lighthouse.domain.log.repository.row.ServiceSummaryRow;
 import com.app.lighthouse.domain.log.repository.row.TimelineRow;
+import com.app.lighthouse.global.util.TimeUtils;
 
 @Repository
 public class LogRepository {
@@ -493,7 +494,7 @@ public class LogRepository {
     }
 
     private LocalDateTime toSafeLocalDateTime(Timestamp ts) {
-        return ts != null ? ts.toLocalDateTime() : null;
+        return ts != null ? TimeUtils.toKst(ts.toLocalDateTime()) : null;
     }
 
     private boolean hasValue(String s) {
