@@ -41,13 +41,13 @@
 
     <insert id="insert">
         INSERT INTO lh_application (service_name, display_name, description)
-        VALUES (#{serviceName}, #{displayName}, #{description})
+        VALUES (#{serviceName}, #{displayName}, #{description, jdbcType=VARCHAR})
     </insert>
 
     <update id="update">
         UPDATE lh_application
         SET display_name = #{displayName},
-            description  = #{description},
+            description  = #{description, jdbcType=VARCHAR},
             status       = #{status},
             updated_at   = SYSTIMESTAMP
         WHERE app_id = #{appId}
